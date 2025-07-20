@@ -33,6 +33,9 @@ WHITELIST = (
 # Customize telegramify-markdown settings
 config = customize.get_runtime_config()
 config.markdown_symbol.head_level_1 = "📌"
+config.markdown_symbol.head_level_2 = ""
+config.markdown_symbol.head_level_3 = ""
+config.markdown_symbol.head_level_4 = ""
 config.markdown_symbol.link = "🔗"
 config.cite_expandable = True
 
