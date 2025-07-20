@@ -1,0 +1,3 @@
+python-dotenv==1.1.1
+python-telegram-bot==22.2
+telegramify_markdown==0.5.1
