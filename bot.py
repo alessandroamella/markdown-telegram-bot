@@ -139,88 +139,22 @@ This is **bold** and this is *italic*
         markdown_text = update.message.text
 
         try:
-            # Use telegramify instead of markdownify for long text handling
-            # This automatically splits long messages and handles formatting
-            message_chunks = telegramify_markdown.telegramify(
-                markdown_text,
-                max_word_count=2000,  # Adjust chunk size as needed
-                split_long_words=True,
-                normalize_whitespace=False,
+            # Convert markdown to Telegram format
+            formatted_text = telegramify_markdown.markdownify(
+                markdown_text, max_line_length=None, normalize_whitespace=False
             )
 
-            # Send each chunk as a separate message
-            for i, chunk in enumerate(message_chunks):
-                if chunk.text.strip():  # Only send non-empty chunks
-                    # Add chunk indicator for multi-part messages
-                    if len(message_chunks) > 1:
-                        chunk_header = f"📄 *Part {i+1}/{len(message_chunks)}*\n\n"
-                        final_text = chunk_header + chunk.text
-                    else:
-                        final_text = chunk.text
-
-                    await update.message.reply_text(final_text, parse_mode="MarkdownV2")
-
-                # Handle any files/images that might be generated
-                if hasattr(chunk, "files") and chunk.files:
-                    for file_info in chunk.files:
-                        if file_info.get("type") == "image":
-                            # Send as photo if it's an image
-                            await update.message.reply_photo(
-                                photo=file_info["file"],
-                                caption=file_info.get("caption", ""),
-                            )
-                        else:
-                            # Send as document for other file types
-                            await update.message.reply_document(
-                                document=file_info["file"],
-                                caption=file_info.get("caption", ""),
-                            )
-
-            logger.info(
-                f"Successfully formatted and sent {len(message_chunks)} message chunks for user {user_id}"
-            )
+            await update.message.reply_text(formatted_text, parse_mode="MarkdownV2")
+            logger.info(f"Successfully formatted message for user {user_id}")
 
         except Exception as e:
             logger.error(f"Error formatting message: {e}")
-
-            # Fallback to simple markdownify for shorter messages
-            try:
-                logger.info("Attempting fallback to markdownify...")
-                formatted_text = telegramify_markdown.markdownify(
-                    markdown_text, max_line_length=None, normalize_whitespace=False
-                )
-
-                # Check if message is too long for Telegram (4096 chars limit)
-                if len(formatted_text) > 4000:
-                    # Split manually if still too long
-                    chunks = [
-                        formatted_text[i : i + 4000]
-                        for i in range(0, len(formatted_text), 4000)
-                    ]
-                    for i, chunk in enumerate(chunks):
-                        chunk_header = (
-                            f"📄 *Part {i+1}/{len(chunks)}*\n\n"
-                            if len(chunks) > 1
-                            else ""
-                        )
-                        await update.message.reply_text(
-                            chunk_header + chunk, parse_mode="MarkdownV2"
-                        )
-                else:
-                    await update.message.reply_text(
-                        formatted_text, parse_mode="MarkdownV2"
-                    )
-
-                logger.info(f"Fallback successful for user {user_id}")
-
-            except Exception as fallback_error:
-                logger.error(f"Fallback also failed: {fallback_error}")
-                # Send error message in a safe format
-                error_text = str(e).replace(".", "\\.")
-                error_msg = (
-                    f"❌ Sorry, I couldn't format your message\\. Error: `{error_text}`"
-                )
-                await update.message.reply_text(error_msg, parse_mode="MarkdownV2")
+            # Send error message in a safe format
+            error_text = str(e).replace(".", "\\.")
+            error_msg = (
+                f"❌ Sorry, I couldn't format your message\\. Error: `{error_text}`"
+            )
+            await update.message.reply_text(error_msg, parse_mode="MarkdownV2")
 
     async def error_handler(
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
